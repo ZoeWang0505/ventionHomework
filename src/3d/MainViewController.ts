@@ -8,6 +8,7 @@ export interface MainViewController {
   createShape(shape: Shape): void
   selectShape(point: [number, number]): void
   deleteSelectedShape(): void
+  deleteShape(shape: THREE.Mesh): void
 }
 
 export function createMainViewController(): MainViewController {
@@ -28,6 +29,13 @@ export function createMainViewController(): MainViewController {
     obj.userData.isSelected = false
     if (obj.userData.originalMaterial) {
       obj.material = obj.userData.originalMaterial
+    }
+  }
+
+  function deleteShape(shape: THREE.Mesh)  {
+    if (shape) {
+      shape.parent?.remove(shape)
+      getNotificationCenter().notify('shapeRemoved', view.getObjectsInScene())
     }
   }
 
@@ -84,10 +92,10 @@ export function createMainViewController(): MainViewController {
     },
     deleteSelectedShape() {
       if (selectedShape) {
-        selectedShape.parent?.remove(selectedShape)
-        getNotificationCenter().notify('shapeRemoved', view.getObjectsInScene())
+        deleteShape(selectedShape)
         getNotificationCenter().notify('shapeSelected', null)
       }
-    }
+    },
+    deleteShape
   }
 }

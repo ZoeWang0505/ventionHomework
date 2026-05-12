@@ -30,7 +30,7 @@ function initializeApp() {
   }
 
   createShapePanel(shapeController)
-  createShapeList()
+  createShapeList(shapeController)
 
   return {}
 }

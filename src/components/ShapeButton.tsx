@@ -9,7 +9,7 @@ const ShapeButton: React.FC<ButtonProps> = ({ label, onClick }) => {
   const _onClick = () => {
     onClick()
   }
-  return <button onClick={_onClick}>Add {label}</button>
+  return <button onClick={_onClick}>{label}</button>
 }
 
 export default ShapeButton

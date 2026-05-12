@@ -1,0 +1,44 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Toolbar */
+.top-toolbar {
+  height: 50px;
+  background: #333;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+}
+
+/* Main Content Area */
+.main-container {
+  display: flex;
+  width: 100%;
+  height: calc(100% - 50px);
+}
+
+.left-bar {
+  max-width: 200px;
+  background: #ddd;
+  padding: 10px;
+}
+
+.right-bar {
+  width: 200px;
+  background: #ccc;
+  padding: 4px 10px;
+}
+
+.center-area {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  background: #f0f0f0;
+}

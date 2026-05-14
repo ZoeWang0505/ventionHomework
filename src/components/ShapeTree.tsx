@@ -37,7 +37,16 @@ const ShapeList: React.FC<{ controller: MainViewController }> = ({controller}) =
   return (
     <div className={styles.container}>
       <h3>{projectName}</h3>
-      <span>{numOfShapes} objects</span>
+          <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+            <span>{numOfShapes} objects</span>
+                  <div style={{width:"30%"}}>
+                <Button label={"delete"} onClick={() => {
+                  if (selectedShape) {
+                      controller.deleteShape(selectedShape)
+                  }
+                }} />
+          </div>
+      </div>
 
       <div className={styles.treeContainer}>
         {shapes.map((shape, index) => (
@@ -101,10 +110,8 @@ function ShapeItem({
   children,
   isSelected,
   shape,
-  controller
 }: PropsWithChildren<{ isSelected: boolean; shape: Mesh, controller: MainViewController }>) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
       <div
         className='shape-item'
         style={{
@@ -118,12 +125,6 @@ function ShapeItem({
       >
         {children}
       </div>
-      <div style={{width:"30%"}}>
-          <Button label={"delete"} onClick={() => {
-            controller.deleteShape(shape);
-          }} />
-      </div>
-    </div>
   )
 }
 

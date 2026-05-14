@@ -25,11 +25,25 @@ export function createMainViewController(): MainViewController {
     )
   }
 
-  function highlightObject(obj: THREE.Mesh) {
-    obj.userData.isSelected = false
-    if (obj.userData.originalMaterial) {
-      obj.material = obj.userData.originalMaterial
-    }
+  /**
+   * highlight or unhighlight an object
+   * @param obj 
+   * @param highlight boolean, true to highlight, false to unhighlight
+   */
+  function highlightObject(obj: THREE.Object3D, highlight: boolean) {
+    obj.traverse((node) => {
+      if (node instanceof THREE.Mesh) {
+        node.userData.isSelected = highlight
+
+        if (highlight) {
+          node.material = highlightedMaterial;
+        } else {
+          if (node.userData.originalMaterial) {
+            node.material = node.userData.originalMaterial;
+          }
+        }
+      }
+    });
   }
 
   function deleteShape(shape: THREE.Mesh)  {
@@ -44,8 +58,8 @@ export function createMainViewController(): MainViewController {
     (mesh: THREE.Mesh | null) => {
       const objects = view.getObjectsInScene()
       objects.forEach(obj => {
-        highlightObject(obj as THREE.Mesh)
-        obj.traverse(child => highlightObject(child as THREE.Mesh))
+        highlightObject(obj as THREE.Mesh, false)
+        obj.traverse(child => highlightObject(child as THREE.Mesh, false))
       })
 
       if (mesh === null) {
@@ -54,8 +68,8 @@ export function createMainViewController(): MainViewController {
       }
 
       mesh.userData.isSelected = true
-      mesh.userData.originalMaterial = mesh.material
-      mesh.material = highlightedMaterial
+      highlightObject(mesh as THREE.Mesh, true)
+      mesh.traverse(child => highlightObject(child as THREE.Mesh, true))
       selectedShape = mesh
     }
   )
@@ -72,7 +86,7 @@ export function createMainViewController(): MainViewController {
         } else {
           view.addToScene(newMesh)
         }
-
+       
         getNotificationCenter().notify('shapeAdded', view.getObjectsInScene())
       }
     },

@@ -1,6 +1,6 @@
 // Toolbar.tsx
 import { useContext, useState } from 'react'
-import { NotificationContext } from '../3d/notification'
+import { NotificationContext } from '../notification'
 
 // import '../styles/toolbar.css'
 

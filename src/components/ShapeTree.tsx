@@ -3,34 +3,35 @@ import React, { useEffect, useState, type PropsWithChildren } from 'react'
 
 import '../styles/shape_properties.css'
 import styles from './ShapeTree.module.css'
-import { getNotificationCenter } from '../notification'
 import type { Mesh } from 'three'
 import ThreeEngineController from '../3d/engine'
 import { useController } from '../3d/MainViewController'
 import Button from './ShapeButton'
+import { useNotification } from '../notification'
 
 export const ShapeList: React.FC= () => {
   const {deleteSelectedShape} = useController()
+  const {subscribe} = useNotification()
   const [projectName, setProjectName] = useState($('.project-name').text())
   const [numOfShapes, setNumOfShapes] = useState(0)
   const [shapes, setShapes] = useState<Mesh[]>([])
   const [selectedShape, setSelectedShape] = useState<Mesh | null>(null)
 
-  getNotificationCenter().subscribe('projectName', newName => {
+  subscribe('projectName', newName => {
     setProjectName(newName)
   })
 
   useEffect(() => {
-    getNotificationCenter().subscribe('shapeAdded', (shapes: Mesh[]) => {
+    subscribe('shapeAdded', (shapes: Mesh[]) => {
       setShapes(shapes)
       setNumOfShapes(ThreeEngineController.getInstance().getObjectCount())
     })
-    getNotificationCenter().subscribe('shapeRemoved', (shapes: Mesh[]) => {
+    subscribe('shapeRemoved', (shapes: Mesh[]) => {
       setShapes(shapes)
       setNumOfShapes(ThreeEngineController.getInstance().getObjectCount())
     })
 
-    getNotificationCenter().subscribe('shapeSelected', (shape: Mesh | null) => {
+    subscribe('shapeSelected', (shape: Mesh | null) => {
       setSelectedShape(shape)
     })
   }, [])
@@ -105,6 +106,7 @@ function ShapeItem({
   isSelected,
   shape,
 }: PropsWithChildren<{ isSelected: boolean; shape: Mesh}>) {
+  const {notify} = useNotification()
   return (
       <div
         className='shape-item'
@@ -113,7 +115,7 @@ function ShapeItem({
           width:"70%"
         }}
         onClick={e => {
-          getNotificationCenter().notify('shapeSelected', shape)
+          notify('shapeSelected', shape)
           e.stopPropagation()
         }}
       >
@@ -121,10 +123,3 @@ function ShapeItem({
       </div>
   )
 }
-
-// export function createShapeList(controller: MainViewController) {
-//   const listRoot = document.getElementById('shape-properties')
-//   if (listRoot) {
-//     createRoot(listRoot).render(<ShapeList controller={controller}/>)
-//   }
-// }

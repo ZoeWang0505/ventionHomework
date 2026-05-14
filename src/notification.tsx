@@ -1,5 +1,4 @@
-// NotificationProvider.tsx
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useRef } from 'react'
 
 type Callback = (value: any) => void
 
@@ -41,16 +40,10 @@ export function NotificationProvider({ children }) {
   )
 }
 
-export function useNotification(topic: string) {
-  const { subscribe, unsubscribe } = useContext(NotificationContext)
-  const [value, setValue] = useState<any>(null)
-
-  useEffect(() => {
-    const handler = (v: any) => setValue(v)
-
-    subscribe(topic, handler)
-    return () => unsubscribe(topic, handler)
-  }, [topic, subscribe, unsubscribe])
-
-  return value
+export function useNotification() {
+  const ctx = useContext(NotificationContext)
+  if (!ctx) {
+    throw new Error('Notification must be used inside <NotificationProvider>')
+  }
+  return ctx
 }

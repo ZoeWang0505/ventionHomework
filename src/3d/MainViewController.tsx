@@ -1,10 +1,10 @@
 import * as THREE from 'three'
-import { getNotificationCenter } from '../notification'
 import ThreeEngineController from './engine'
 import { RayCastService } from './raycaster'
 import { buildShape, type Shape } from './buildShape'
 import { disposeObject } from './objectUtil'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { useNotification } from '../notification'
 
 export interface MainViewController {
   createShape(shape: Shape): void
@@ -22,6 +22,7 @@ interface ControllerContextValue {
 const ControllerContext = createContext<ControllerContextValue | null>(null)
 
 export function ControllerProvider({ children }: { children: React.ReactNode }) {
+  const {notify, subscribe} = useNotification();
   const [view] = useState(ThreeEngineController.getInstance())
   const [raycaster] = useState(new RayCastService())
 
@@ -70,7 +71,7 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
         } else {
           view.addToScene(newMesh)
         }
-        getNotificationCenter().notify('shapeAdded', view.getObjectsInScene())
+        notify('shapeAdded', view.getObjectsInScene())
       }
     }, [[view, selectedShape]])
 
@@ -80,12 +81,12 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
       const objects = view.getObjectsInScene()
       const selectedObjects = raycaster.getIntersections(objects)
       if (!selectedObjects.length) {
-        getNotificationCenter().notify('shapeSelected', null)
+        notify('shapeSelected', null)
         return
       }
 
       const firstObject = selectedObjects[0].object
-      getNotificationCenter().notify('shapeSelected', firstObject)
+      notify('shapeSelected', firstObject)
     },
     [selectedShape, raycaster, view]
   )
@@ -95,8 +96,8 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
         disposeObject(selectedShape)
         selectedShape.parent?.remove(selectedShape)
         
-        getNotificationCenter().notify('shapeRemoved', view.getObjectsInScene())
-        getNotificationCenter().notify('shapeSelected', null)
+        notify('shapeRemoved', view.getObjectsInScene())
+        notify('shapeSelected', null)
       }
     }, [selectedShape])
 
@@ -112,7 +113,7 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
   }, [deleteSelectedShape])
 
   useEffect(() => {
-    getNotificationCenter().subscribe(
+    subscribe(
       'shapeSelected',
       (mesh: THREE.Mesh | null) => {
         const objects = view.getObjectsInScene()

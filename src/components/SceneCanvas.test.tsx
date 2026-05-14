@@ -53,7 +53,7 @@ describe('SceneCanvas', () => {
 
 import * as exports from '../3d/buildShape'
 import { ControllerProvider, useController } from '../3d/MainViewController'
-import { NotificationProvider } from '../3d/notification'
+import { NotificationProvider } from '../notification'
 vi.mock('../3d/buildShape', { spy: true })
 
 function mockNewMesh({

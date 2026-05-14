@@ -1,38 +1,19 @@
 import { createRoot } from 'react-dom/client'
-import { createMainViewController } from './src/3d/MainViewController'
-import CountComponent from './src/components/CountComponent'
-import { createShapeList } from './src/components/ShapeTree'
-import { createShapePanel } from './src/components/ShapePanel'
-import { createLayout } from './src/layout'
-import { createToolbar } from './src/toolbar'
-import SceneCanvas from './src/components/SceneCanvas'
+import { ControllerProvider } from './src/3d/MainViewController'
+import { NotificationProvider } from './src/3d/notification'
+import { AppLayout } from './src/layout'
 
 function initializeApp() {
-  createLayout()
-  const shapeController = createMainViewController()
-
-  window.addEventListener('keydown', event => {
-    if (event.key === 'Delete' || event.key === 'Backspace') {
-      shapeController.deleteSelectedShape()
-    }
-  })
-
-  createToolbar(shapeController)
-  const reactToolbarRoot = document.getElementById('react-toolbar-root')
-  if (reactToolbarRoot) {
-    createRoot(reactToolbarRoot).render(<CountComponent />)
-  }
-  const reactCanvasRoot = document.getElementById('main-view')
+  const reactCanvasRoot = document.getElementById('app-root')
   if (reactCanvasRoot) {
     createRoot(reactCanvasRoot).render(
-      <SceneCanvas controller={shapeController} />
+      <NotificationProvider>
+        <ControllerProvider>
+          <AppLayout />
+        </ControllerProvider>
+      </NotificationProvider>
     )
   }
-
-  createShapePanel(shapeController)
-  createShapeList(shapeController)
-
-  return {}
 }
 
 export const app = initializeApp()

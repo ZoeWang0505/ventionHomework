@@ -1,15 +1,16 @@
 import $ from 'jquery'
 import React, { useEffect, useState, type PropsWithChildren } from 'react'
-import { createRoot } from 'react-dom/client'
-import '../../styles/shape_properties.css'
+
+import '../styles/shape_properties.css'
 import styles from './ShapeTree.module.css'
 import { getNotificationCenter } from '../notification'
 import type { Mesh } from 'three'
 import ThreeEngineController from '../3d/engine'
-import type { MainViewController } from '../3d/MainViewController'
+import { useController } from '../3d/MainViewController'
 import Button from './ShapeButton'
 
-const ShapeList: React.FC<{ controller: MainViewController }> = ({controller}) => {
+export const ShapeList: React.FC= () => {
+  const {deleteSelectedShape} = useController()
   const [projectName, setProjectName] = useState($('.project-name').text())
   const [numOfShapes, setNumOfShapes] = useState(0)
   const [shapes, setShapes] = useState<Mesh[]>([])
@@ -41,7 +42,7 @@ const ShapeList: React.FC<{ controller: MainViewController }> = ({controller}) =
             <span>{numOfShapes} objects</span>
                   <div style={{width:"30%"}}>
                 <Button label={"delete"} onClick={() => {
-                      controller.deleteSelectedShape()
+                      deleteSelectedShape()
                 }} />
           </div>
       </div>
@@ -54,7 +55,6 @@ const ShapeList: React.FC<{ controller: MainViewController }> = ({controller}) =
             selectedShape={selectedShape}
             index={index}
             level={0}
-            controller ={controller}
           />
         ))}
       </div>
@@ -67,7 +67,6 @@ interface ShapeNodeProps {
   selectedShape: Mesh | null
   index: number
   level: number
-  controller: MainViewController
 }
 
 const ShapeNode: React.FC<ShapeNodeProps> = ({
@@ -75,7 +74,6 @@ const ShapeNode: React.FC<ShapeNodeProps> = ({
   selectedShape,
   index,
   level,
-  controller
 }) => {
   const label = level === 0 ? `Shape ${index + 1}` : `Child Shape ${index + 1}`
   return (
@@ -83,7 +81,6 @@ const ShapeNode: React.FC<ShapeNodeProps> = ({
         key={shape.uuid}
         shape={shape}
         isSelected={shape.uuid === selectedShape?.uuid}
-        controller={controller}
       >
         {label}
         {shape.children.length > 0 && (
@@ -95,7 +92,6 @@ const ShapeNode: React.FC<ShapeNodeProps> = ({
                 selectedShape={selectedShape}
                 index={childIndex}
                 level={level + 1}
-                controller ={controller}
               />
             ))}
           </div>
@@ -108,7 +104,7 @@ function ShapeItem({
   children,
   isSelected,
   shape,
-}: PropsWithChildren<{ isSelected: boolean; shape: Mesh, controller: MainViewController }>) {
+}: PropsWithChildren<{ isSelected: boolean; shape: Mesh}>) {
   return (
       <div
         className='shape-item'
@@ -126,9 +122,9 @@ function ShapeItem({
   )
 }
 
-export function createShapeList(controller: MainViewController) {
-  const listRoot = document.getElementById('shape-properties')
-  if (listRoot) {
-    createRoot(listRoot).render(<ShapeList controller={controller}/>)
-  }
-}
+// export function createShapeList(controller: MainViewController) {
+//   const listRoot = document.getElementById('shape-properties')
+//   if (listRoot) {
+//     createRoot(listRoot).render(<ShapeList controller={controller}/>)
+//   }
+// }

@@ -1,28 +1,20 @@
 import React from 'react'
-import { createRoot } from 'react-dom/client'
-import '../../styles/shape_panel.css'
-import { type MainViewController } from '../3d/MainViewController'
+
+import '../styles/shape_panel.css'
+import { useController } from '../3d/MainViewController'
 import Button from './ShapeButton'
 
-const ShapePanel: React.FC<{ controller: MainViewController }> = ({
-  controller
-}) => {
+export const ShapePanel: React.FC = () => {
+  const {createShape} = useController() 
   return (
     <div>
-      <Button label='add sphere' onClick={() => controller.createShape('sphere')} />
-      <Button label='add cube' onClick={() => controller.createShape('cube')} />
+      <Button label='add sphere' onClick={() => createShape('sphere')} />
+      <Button label='add cube' onClick={() => createShape('cube')} />
       <Button
         label='add cylinder'
-        onClick={() => controller.createShape('cylinder')}
+        onClick={() => createShape('cylinder')}
       />
       
     </div>
   )
-}
-
-export function createShapePanel(controller: MainViewController) {
-  const panelRoot = document.getElementById('shape-panel')
-  if (panelRoot) {
-    createRoot(panelRoot).render(<ShapePanel controller={controller} />)
-  }
 }

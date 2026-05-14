@@ -1,13 +1,10 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import styles from './SceneCanvas.module.css'
 import ThreeEngineController from '../3d/engine'
-import type { MainViewController } from '../3d/MainViewController'
+import { useController } from '../3d/MainViewController'
 
-export default function SceneCanvas({
-  controller
-}: {
-  controller: MainViewController
-}) {
+export default function SceneCanvas() {
+  const {selectShape} = useController()
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -46,7 +43,7 @@ export default function SceneCanvas({
       onClick={event => {
         const engine = ThreeEngineController.getInstance()
         const point = engine.clientToNdc(event)
-        controller.selectShape(point)
+        selectShape(point)
       }}
     />
   )

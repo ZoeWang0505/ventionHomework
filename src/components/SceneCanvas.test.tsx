@@ -2,7 +2,6 @@ import { describe, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import SceneCanvas from './SceneCanvas'
 import { act } from 'react'
-import { createMainViewController } from '../3d/MainViewController'
 import {
   BoxGeometry,
   BufferGeometry,
@@ -12,14 +11,18 @@ import {
 } from 'three'
 
 describe('SceneCanvas', () => {
+  const {createShape} = useController();
   async function renderSceneCanvas() {
-    const controller = createMainViewController()
     const { getByTestId } = await render(
-      <SceneCanvas controller={controller} />
+      <NotificationProvider>
+        <ControllerProvider>
+                <SceneCanvas />
+        </ControllerProvider>
+      </NotificationProvider>
     )
     const canvas = getByTestId('scene-canvas')
 
-    return { controller, canvas }
+    return { canvas }
   }
 
   test('should highlight a newly created shape on click', async () => {
@@ -27,10 +30,10 @@ describe('SceneCanvas', () => {
       color: 'rgb(255, 0, 0)',
       position: new Vector3(0, 0, 0)
     })
-    const { controller, canvas } = await renderSceneCanvas()
+    const { canvas } = await renderSceneCanvas()
 
     act(() => {
-      controller.createShape('sphere')
+      createShape('sphere')
     })
 
     expect(mockedMesh.material.color.getStyle()).toBe('rgb(255,0,0)')
@@ -49,6 +52,8 @@ describe('SceneCanvas', () => {
 })
 
 import * as exports from '../3d/buildShape'
+import { ControllerProvider, useController } from '../3d/MainViewController'
+import { NotificationProvider } from '../3d/notification'
 vi.mock('../3d/buildShape', { spy: true })
 
 function mockNewMesh({

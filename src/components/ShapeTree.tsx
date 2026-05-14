@@ -41,9 +41,7 @@ const ShapeList: React.FC<{ controller: MainViewController }> = ({controller}) =
             <span>{numOfShapes} objects</span>
                   <div style={{width:"30%"}}>
                 <Button label={"delete"} onClick={() => {
-                  if (selectedShape) {
-                      controller.deleteShape(selectedShape)
-                  }
+                      controller.deleteSelectedShape()
                 }} />
           </div>
       </div>

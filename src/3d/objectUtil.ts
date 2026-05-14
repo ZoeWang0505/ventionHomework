@@ -1,7 +1,7 @@
 import { Mesh, type Object3D } from "three";
 
 /**
- * AI generated function
+ * AI generated function, to disposeObject after delete
  * @param object 
  */
 export const disposeObject = (object: Object3D) => {

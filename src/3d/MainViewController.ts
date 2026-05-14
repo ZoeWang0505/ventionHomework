@@ -3,12 +3,12 @@ import { getNotificationCenter } from '../notification'
 import ThreeEngineController from './engine'
 import { RayCastService } from './raycaster'
 import { buildShape, type Shape } from './buildShape'
+import { disposeObject } from './objectUtil'
 
 export interface MainViewController {
   createShape(shape: Shape): void
   selectShape(point: [number, number]): void
   deleteSelectedShape(): void
-  deleteShape(shape: THREE.Mesh): void
 }
 
 export function createMainViewController(): MainViewController {
@@ -44,13 +44,6 @@ export function createMainViewController(): MainViewController {
         }
       }
     });
-  }
-
-  function deleteShape(shape: THREE.Mesh)  {
-    if (shape) {
-      shape.parent?.remove(shape)
-      getNotificationCenter().notify('shapeRemoved', view.getObjectsInScene())
-    }
   }
 
   getNotificationCenter().subscribe(
@@ -106,10 +99,12 @@ export function createMainViewController(): MainViewController {
     },
     deleteSelectedShape() {
       if (selectedShape) {
-        deleteShape(selectedShape)
+        disposeObject(selectedShape)
+        selectedShape.parent?.remove(selectedShape)
+        
+        getNotificationCenter().notify('shapeRemoved', view.getObjectsInScene())
         getNotificationCenter().notify('shapeSelected', null)
       }
     },
-    deleteShape
   }
 }

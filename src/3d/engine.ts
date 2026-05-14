@@ -1,5 +1,6 @@
 import {
   Color,
+  Mesh,
   Object3D,
   PerspectiveCamera,
   Scene,
@@ -103,8 +104,9 @@ export default class ThreeEngineController {
       throw new Error('Scene is not initialized')
     }
     let count = 0
-    this.scene.traverse(() => {
-      count++
+    this.scene.traverse((obj: Object3D) => {
+       if (obj instanceof Mesh)
+        count++
     })
     return count
   }

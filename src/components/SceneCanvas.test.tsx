@@ -1,6 +1,7 @@
-import { describe, expect, test, vi } from 'vitest'
+import { afterAll, afterEach, describe, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import SceneCanvas from './SceneCanvas'
+import { cleanup } from 'vitest-browser-react'
 import { act } from 'react'
 import {
   BoxGeometry,
@@ -10,9 +11,26 @@ import {
   Vector3
 } from 'three'
 
+import { beforeEach } from 'vitest'
+import ThreeEngineController from '../3d/engine'
+
+beforeEach(() => {
+  // Reset engine singleton BEFORE each test
+  ThreeEngineController.dispose?.()
+})
+
+afterEach(() => {
+  // CRITICAL: unmount SceneCanvas and stop render loop
+  cleanup()
+  // Reset engine singleton AFTER unmount
+  ThreeEngineController.dispose?.()
+})
+
+afterAll(() => cleanup())
+
 describe('SceneCanvas', () => {
   let controller: any;
-
+  
   async function renderSceneCanvas() {
     const { getByTestId } = await render(
       <NotificationProvider>
@@ -27,11 +45,13 @@ describe('SceneCanvas', () => {
     return { canvas }
   }
 
+  
   test('should highlight a newly created shape on click', async () => {
     const mockedMesh = mockNewMesh({
       color: 'rgb(255, 0, 0)',
       position: new Vector3(0, 0, 0)
     })
+    
     const { canvas } = await renderSceneCanvas()
     act(() => {
       controller.createShape('sphere')
@@ -50,6 +70,29 @@ describe('SceneCanvas', () => {
     expect(mockedMesh.material.color.getStyle()).toBe('rgb(255,255,0)')
     expect(mockedMesh.userData.isSelected).toBe(true)
   })
+
+  test("deleteSelectedShape removes mesh", async () => {
+      const mockedMesh = mockNewMesh({ color: "rgb(255,0,0)" });
+
+      const { canvas } = await renderSceneCanvas()
+      act(() => {
+        controller.createShape('sphere')
+      })
+      expect(controller.view.getObjectsInScene().length).toBe(1)
+
+      const $canvas = canvas.element()
+      const middleOfCanvas = {
+        clientX: $canvas.clientWidth / 2,
+        clientY: $canvas.clientHeight / 2
+      }
+      await canvas.click(middleOfCanvas)
+      act(() => {
+        controller.deleteSelectedShape();
+      })
+
+      expect(controller.view.getObjectsInScene().length).toBe(0)
+      expect(controller.selectedShape).toBe(null)
+    });
 })
 
 import * as exports from '../3d/buildShape'

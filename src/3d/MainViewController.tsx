@@ -6,14 +6,9 @@ import { disposeObject } from './objectUtil'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNotification } from '../notification'
 
-export interface MainViewController {
-  createShape(shape: Shape): void
-  selectShape(point: [number, number]): void
-  deleteSelectedShape(): void
-}
-
 interface ControllerContextValue {
-  selectedShape: THREE.Mesh | null
+  selectedShape: THREE.Mesh | null,
+  view: ThreeEngineController,
   createShape: (shape: Shape) => void
   selectShape: (point: [number, number]) => void
   deleteSelectedShape: () => void
@@ -95,7 +90,7 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
       if (selectedShape) {
         disposeObject(selectedShape)
         selectedShape.parent?.remove(selectedShape)
-        
+        setSelectedShape(null)
         notify('shapeRemoved', view.getObjectsInScene())
         notify('shapeSelected', null)
       }
@@ -150,6 +145,7 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
     <ControllerContext.Provider
       value={{
         selectedShape,
+        view,
         createShape,
         selectShape,
         deleteSelectedShape,

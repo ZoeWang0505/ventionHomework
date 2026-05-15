@@ -9,12 +9,17 @@ export default function SceneCanvas() {
 
   useEffect(() => {
     const engine = ThreeEngineController.getInstance()
-
+    let isRunning = true
     const renderLoop = () => {
+      if (!isRunning) return
       engine.render()
       requestAnimationFrame(renderLoop)
     }
     renderLoop()
+
+    return () => {
+      isRunning = false
+    }
   }, [])
 
   useLayoutEffect(() => {

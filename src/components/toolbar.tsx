@@ -19,12 +19,11 @@ export function Toolbar() {
     <nav className="top-toolbar">
       <h2 className="project-name">{name}</h2>
 
-      <button onClick={handleChangeName}>
-        Change name
-      </button>
-
-      {/* This replaces your #react-toolbar-root div */}
-      <div id="react-toolbar-root" />
+      <div id="react-toolbar-root" >
+        <button onClick={handleChangeName}>
+          Change name
+        </button>
+      </div>
     </nav>
   )
 }

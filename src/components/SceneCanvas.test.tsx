@@ -11,12 +11,14 @@ import {
 } from 'three'
 
 describe('SceneCanvas', () => {
-  const {createShape} = useController();
+  let controller: any;
+
   async function renderSceneCanvas() {
     const { getByTestId } = await render(
       <NotificationProvider>
         <ControllerProvider>
-                <SceneCanvas />
+          <TestController callback={(ctx) => (controller = ctx)} />
+          <SceneCanvas />
         </ControllerProvider>
       </NotificationProvider>
     )
@@ -31,9 +33,8 @@ describe('SceneCanvas', () => {
       position: new Vector3(0, 0, 0)
     })
     const { canvas } = await renderSceneCanvas()
-
     act(() => {
-      createShape('sphere')
+      controller.createShape('sphere')
     })
 
     expect(mockedMesh.material.color.getStyle()).toBe('rgb(255,0,0)')
@@ -52,8 +53,9 @@ describe('SceneCanvas', () => {
 })
 
 import * as exports from '../3d/buildShape'
-import { ControllerProvider, useController } from '../3d/MainViewController'
+import { ControllerProvider } from '../3d/MainViewController'
 import { NotificationProvider } from '../notification'
+import { TestController } from '../3d/testController'
 vi.mock('../3d/buildShape', { spy: true })
 
 function mockNewMesh({

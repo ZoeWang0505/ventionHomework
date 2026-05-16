@@ -1,3 +1,51 @@
+
+---
+
+# Explanation Based on the Order of Commits
+
+1. Changed `ShapeButton` ([src/components/ShapeButton.tsx](src/components/ShapeButton.tsx)) to be reusable.
+2. Used `deleteSelectedShape()`, which was already implemented for deleting.
+> **Note on Scene Complexity:** The Three.js scene functions like a singly linked list. Deleting involves removing the object from the scene and disposing of all its children. The time complexity of this delete operation is $O(n)$.
+
+
+3. Fixed the logic in `highlightObject()` ([src/3d/MainViewController.tsx](src/3d/MainViewController.tsx)) by adding a new parameter to toggle highlight/unhighlight and implementing recursive logic for all child elements.
+4. Added the `disposeObject()` function ([src/3d/objectUtil.ts](src/3d/objectUtil.ts)) to properly release memory (disposing of geometry and materials) after an object is deleted from the scene.
+5. Fixed the object counter logic so it displays correctly (ensuring it does not count the scene itself).
+6. Restructured the codebase using React Context Providers:
+* Defined interfaces and created `ControllerProvider` and `NotificationProvider` (assisted by AI). Converting the controller and notification into context hooks removed the need to pass them down as props through React components.
+* Rewrote the toolbar and layout to migrate them from jQuery to native React components (assisted by AI).
+* Moved the `styles` folder inside the `src` directory to maintain a clean project structure.
+
+7. Continued cleaning up legacy code by replacing occurrences of `getNotificationCenter()` with the new `useNotification()` hook.
+8. Modified the test files to make them pass, utilizing `useController` within the testing environment.
+9. Added new test suites for the deletion feature covering multiple scenarios. Integrated `beforeEach`, `afterEach`, and `afterAll` hooks to reset the testing environment cleanly.
+10. Introduced an `isRunning` flag to halt rendering during tests, resolving a bug that previously caused the test runner to crash.
+11. Defined a custom type to cache information inside `userData`, keeping the color stored as a string instead of a material reference:
+```typescript
+type Info = {
+  color: string;
+  meshType: Shape;
+  isSelected: boolean;
+}
+
+```
+
+Created `ShapeInfo.tsx` to display both the shape type and its corresponding color directly within each node.
+
+## To-Dos
+
+1. **Localization:** Extract all hardcoded strings into translation files and load them dynamically using `i18n`.
+2. **Documentation:** Add JSDoc comments to public APIs and Providers so they can be generated into online documentation automatically.
+3. **Architecture:** For more complex scene operations, introduce the **Command Pattern** instead of coupling the business logic directly within the UI components.
+
+
+
+
+
+
+
+
+
 # Takehome Project
 
 > [!WARNING]

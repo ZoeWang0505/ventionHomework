@@ -3,9 +3,14 @@ import { Mesh } from 'three'
 
 export type Shape = 'sphere' | 'cube' | 'cylinder'
 
+export type Info = {
+  color: number,
+  meshType: Shape,
+  isSelected: boolean
+}
+
 export function buildShape(shape: Shape): Mesh {
   const colors = [0xff0000, 0x00ff00, 0x0000ff]
-
 
   const color = colors[Math.floor(Math.random() * colors.length)]
   let mesh: Mesh | null = null;
@@ -15,7 +20,6 @@ export function buildShape(shape: Shape): Mesh {
         new THREE.SphereGeometry(1, 32, 32),
         new THREE.MeshBasicMaterial({ color })
       )
-      mesh.userData.originalMaterial = mesh.material;
       break;
     case 'cube':
       mesh = new Mesh(
@@ -31,7 +35,12 @@ export function buildShape(shape: Shape): Mesh {
       )
     break
   }
-  //Save meterial for reset color after highlighting
-  mesh.userData.originalMaterial = mesh.material
+  //Save color for reset color after highlighting
+  mesh.userData = {
+    color,
+    meshType: shape,
+    isSelected: false,
+  } as Info
+
   return mesh
 }

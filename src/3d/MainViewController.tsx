@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import ThreeEngineController from './engine'
 import { RayCastService } from './raycaster'
-import { buildShape, type Shape } from './buildShape'
+import { buildShape, type Info, type Shape } from './buildShape'
 import { disposeObject } from './objectUtil'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNotification } from '../notification'
@@ -22,7 +22,7 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
   const [raycaster] = useState(new RayCastService())
 
   const [selectedShape, setSelectedShape] = useState<THREE.Mesh|null>(null);
-  const [highlightedMaterial] = useState(new THREE.MeshBasicMaterial({ color: 0xffff00 }))
+  const [highlightedColor] = useState(0xffff00)
   
 
   function randomPosition() {
@@ -41,13 +41,14 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
   function highlightObject(obj: THREE.Object3D, highlight: boolean) {
     obj.traverse((node) => {
       if (node instanceof THREE.Mesh) {
-        node.userData.isSelected = highlight
+        const info = node.userData as Info
+        info.isSelected = highlight
 
         if (highlight) {
-          node.material = highlightedMaterial;
+          node.material.color.set(highlightedColor);
         } else {
-          if (node.userData.originalMaterial) {
-            node.material = node.userData.originalMaterial;
+          if (info.color) {
+            node.material.color.set(info.color);
           }
         }
       }

@@ -8,6 +8,9 @@ import ThreeEngineController from '../3d/engine'
 import { useController } from '../3d/MainViewController'
 import Button from './ShapeButton'
 import { useNotification } from '../notification'
+import ShapeInfo from './ShapeInfo'
+import type { Info } from '../3d/buildShape'
+import { toHtmlColor } from '../3d/objectUtil'
 
 export const ShapeList: React.FC= () => {
   const {deleteSelectedShape} = useController()
@@ -77,13 +80,14 @@ const ShapeNode: React.FC<ShapeNodeProps> = ({
   level,
 }) => {
   const label = level === 0 ? `Shape ${index + 1}` : `Child Shape ${index + 1}`
+  const {color, meshType} = shape.userData as Info;
   return (
       <ShapeItem
         key={shape.uuid}
         shape={shape}
         isSelected={shape.uuid === selectedShape?.uuid}
       >
-        {label}
+        <ShapeInfo shape={meshType} color={toHtmlColor(color)} size={50} label={label} />
         {shape.children.length > 0 && (
           <div style={{ marginLeft: '10px' }}>
             {shape.children.map((child, childIndex) => (

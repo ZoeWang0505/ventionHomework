@@ -3,10 +3,10 @@ import { Mesh } from 'three'
 
 export type Shape = 'sphere' | 'cube' | 'cylinder'
 
-export type Info = {
-  color: number,
-  meshType: Shape,
+export type RenderInfo = {
+  renderColor: number
   isSelected: boolean
+  infoId?: string
 }
 
 export function buildShape(shape: Shape): Mesh {
@@ -35,12 +35,12 @@ export function buildShape(shape: Shape): Mesh {
       )
     break
   }
-  //Save color for reset color after highlighting
+  // Mesh userData stores internal render metadata only, not the full UI shape schema.
+  // Persisted metadata belongs in the ShapeStore; the mesh is referenced by `infoId`.
   mesh.userData = {
-    color,
-    meshType: shape,
+    renderColor: color,
     isSelected: false,
-  } as Info
+  } as RenderInfo
 
   return mesh
 }

@@ -13,6 +13,7 @@ import {
 
 import { beforeEach } from 'vitest'
 import ThreeEngineController from '../3d/engine'
+import { ControllerProvider,type ControllerContextValue } from '../3d/MainViewController'
 
 beforeEach(() => {
   // Reset engine singleton BEFORE each test
@@ -29,7 +30,7 @@ afterEach(() => {
 afterAll(() => cleanup())
 
 describe('SceneCanvas', () => {
-  let controller: any;
+  let controller: ControllerContextValue;
   
   async function renderSceneCanvas() {
     const { getByTestId } = await render(
@@ -71,8 +72,8 @@ describe('SceneCanvas', () => {
     expect(mockedMesh.userData.isSelected).toBe(true)
   })
 
-  test("deleteSelectedShape removes mesh", async () => {
-      const mockedMesh = mockNewMesh({ color: "rgb(255,0,0)" });
+    test("deleteSelectedShape removes mesh", async () => {
+      mockNewMesh({ color: "rgb(255,0,0)" });
 
       const { canvas } = await renderSceneCanvas()
       act(() => {
@@ -96,9 +97,9 @@ describe('SceneCanvas', () => {
 })
 
 import * as exports from '../3d/buildShape'
-import { ControllerProvider } from '../3d/MainViewController'
-import { NotificationProvider } from '../notification'
+
 import { TestController } from '../3d/testController'
+import { NotificationProvider } from '../notification'
 vi.mock('../3d/buildShape', { spy: true })
 
 function mockNewMesh({

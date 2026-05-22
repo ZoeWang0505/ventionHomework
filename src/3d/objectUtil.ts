@@ -41,7 +41,7 @@ export const toHtmlColor = (hex): string => {
   }
 
   // If it's a string, clean up any '0x' or '#' prefixes
-  let cleaned = hex.toString().trim().replace(/^(0x|#)/i, '');
+  const cleaned = hex.toString().trim().replace(/^(0x|#)/i, '');
 
   // Ensure it's a valid 3 or 6 character hex length, default to black if invalid
   if (cleaned.length !== 3 && cleaned.length !== 6) {

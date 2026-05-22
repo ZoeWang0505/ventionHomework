@@ -14,30 +14,39 @@ import { toHtmlColor } from '../3d/objectUtil'
 
 export const ShapeList: React.FC= () => {
   const {deleteSelectedShape} = useController()
-  const {subscribe} = useNotification()
+  const {subscribe, unsubscribe} = useNotification()
   const [projectName, setProjectName] = useState($('.project-name').text())
   const [numOfShapes, setNumOfShapes] = useState(0)
   const [shapes, setShapes] = useState<Mesh[]>([])
   const [selectedShape, setSelectedShape] = useState<Mesh | null>(null)
 
-  subscribe('projectName', newName => {
-    setProjectName(newName)
-  })
+  useEffect(() => {
+    const handleProjectName = (newName: string) => setProjectName(newName)
+    subscribe<string>('projectName', handleProjectName)
+    return () => unsubscribe<string>('projectName', handleProjectName)
+  }, [subscribe, unsubscribe])
 
   useEffect(() => {
-    subscribe('shapeAdded', (shapes: Mesh[]) => {
-      setShapes(shapes)
+    const handleAdded = (s: Mesh[]) => {
+      setShapes(s)
       setNumOfShapes(ThreeEngineController.getInstance().getObjectCount())
-    })
-    subscribe('shapeRemoved', (shapes: Mesh[]) => {
-      setShapes(shapes)
+    }
+    const handleRemoved = (s: Mesh[]) => {
+      setShapes(s)
       setNumOfShapes(ThreeEngineController.getInstance().getObjectCount())
-    })
+    }
+    const handleSelected = (shape: Mesh | null) => setSelectedShape(shape)
 
-    subscribe('shapeSelected', (shape: Mesh | null) => {
-      setSelectedShape(shape)
-    })
-  }, [])
+    subscribe<Mesh[]>('shapeAdded', handleAdded)
+    subscribe<Mesh[]>('shapeRemoved', handleRemoved)
+    subscribe< Mesh | null>('shapeSelected', handleSelected)
+
+    return () => {
+      unsubscribe<Mesh[]>('shapeAdded', handleAdded)
+      unsubscribe<Mesh[]>('shapeRemoved', handleRemoved)
+      unsubscribe< Mesh | null>('shapeSelected', handleSelected)
+    }
+  }, [subscribe, unsubscribe])
 
   return (
     <div className={styles.container}>

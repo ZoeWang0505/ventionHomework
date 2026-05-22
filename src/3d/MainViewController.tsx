@@ -6,7 +6,17 @@ import { disposeObject } from './objectUtil'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNotification } from '../notification'
 
-interface ControllerContextValue {
+declare global {
+  interface Window {
+    mainViewAPI?: {
+      createShape: (shape: Shape) => void
+      selectShape: (point: [number, number]) => void
+      deleteSelectedShape: () => void
+    }
+  }
+}
+
+export interface ControllerContextValue {
   selectedShape: THREE.Mesh | null,
   view: ThreeEngineController,
   createShape: (shape: Shape) => void
@@ -17,7 +27,7 @@ interface ControllerContextValue {
 const ControllerContext = createContext<ControllerContextValue | null>(null)
 
 export function ControllerProvider({ children }: { children: React.ReactNode }) {
-  const {notify, subscribe} = useNotification();
+  const {notify, subscribe, unsubscribe} = useNotification();
   const [view] = useState(ThreeEngineController.getInstance())
   const [raycaster] = useState(new RayCastService())
 
@@ -38,7 +48,7 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
    * @param obj 
    * @param highlight boolean, true to highlight, false to unhighlight
    */
-  function highlightObject(obj: THREE.Object3D, highlight: boolean) {
+  const highlightObject = useCallback((obj: THREE.Object3D, highlight: boolean) => {
     obj.traverse((node) => {
       if (node instanceof THREE.Mesh) {
         const info = node.userData as Info
@@ -53,7 +63,7 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
         }
       }
     });
-  }
+  }, [highlightedColor])
 
   const createShape = useCallback(
     (shape: Shape) => {
@@ -69,7 +79,7 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
         }
         notify('shapeAdded', view.getObjectsInScene())
       }
-    }, [[view, selectedShape]])
+    }, [notify, view, selectedShape])
 
    const selectShape = useCallback((point: [number, number]) => {
       raycaster.update(point, view.getCamera())
@@ -84,7 +94,7 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
       const firstObject = selectedObjects[0].object
       notify('shapeSelected', firstObject)
     },
-    [selectedShape, raycaster, view]
+    [notify, raycaster, view]
   )
 
   const deleteSelectedShape = useCallback(() => {
@@ -95,7 +105,7 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
         notify('shapeRemoved', view.getObjectsInScene())
         notify('shapeSelected', null)
       }
-    }, [selectedShape])
+    }, [selectedShape, notify, view])
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -109,36 +119,41 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
   }, [deleteSelectedShape])
 
   useEffect(() => {
-    subscribe(
-      'shapeSelected',
-      (mesh: THREE.Mesh | null) => {
-        const objects = view.getObjectsInScene()
-        objects.forEach(obj => {
-          highlightObject(obj as THREE.Mesh, false)
-          obj.traverse(child => highlightObject(child as THREE.Mesh, false))
-        })
-
-        if (mesh === null) {
-          setSelectedShape(null)
-          return
+    const handleShapeSelected = (mesh: THREE.Mesh | null) => {
+      const objects = view.getObjectsInScene()
+      // Unhighlight all objects with a single traversal
+      objects.forEach(obj => {
+        if (obj instanceof THREE.Mesh) {
+          highlightObject(obj, false)
         }
+      })
 
-        mesh.userData.isSelected = true
-        highlightObject(mesh as THREE.Mesh, true)
-        mesh.traverse(child => highlightObject(child as THREE.Mesh, true))
-        setSelectedShape(mesh)
+      if (mesh === null) {
+        setSelectedShape(null)
+        return
       }
-    )
-  }, [])
+      
+      mesh.userData.isSelected = true
+      highlightObject(mesh, true)
+      setSelectedShape(mesh)
+    }
+
+    subscribe<THREE.Mesh | null>('shapeSelected', handleShapeSelected)
+    
+    return () => {
+      // Cleanup: unsubscribe when component unmounts
+      unsubscribe('shapeSelected', handleShapeSelected)
+    }
+  }, [view, subscribe, unsubscribe, highlightObject])
 
   useEffect(() => {
-  // Expose API to window so jQuery code can call it
-  (window as any).mainViewAPI = {
-    createShape,
-    selectShape,
-    deleteSelectedShape,
-  }
-}, [createShape, selectShape, deleteSelectedShape])
+    // Expose API to window so jQuery code can call it
+    window.mainViewAPI = {
+      createShape,
+      selectShape,
+      deleteSelectedShape,
+    }
+  }, [createShape, selectShape, deleteSelectedShape])
 
 
 

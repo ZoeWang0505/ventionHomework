@@ -1,33 +1,33 @@
-import { createContext, useContext, useRef } from 'react'
+import { createContext, useContext, useRef, type ReactNode } from 'react'
 
-type Callback = (value: any) => void
+export type Callback<T = unknown> = (value: T) => void
 
 interface NotificationAPI {
-  subscribe: (topic: string, cb: Callback) => void
-  unsubscribe: (topic: string, cb: Callback) => void
-  notify: (topic: string, value: any) => void
+  subscribe: <T = unknown>(topic: string, cb: Callback<T>) => void
+  unsubscribe: <T = unknown>(topic: string, cb: Callback<T>) => void
+  notify: <T = unknown>(topic: string, value: T) => void
 }
 
-export const NotificationContext = createContext<NotificationAPI>(null as any)
+export const NotificationContext = createContext<NotificationAPI | null>(null)
 
-export function NotificationProvider({ children }) {
-  const topics = useRef(new Map<string, Callback[]>())
+export function NotificationProvider({ children }: { children: ReactNode }) {
+  const topics = useRef(new Map<string, Callback<unknown>[]>())
 
-  const subscribe = (topic: string, cb: Callback) => {
+  const subscribe = <T = unknown>(topic: string, cb: Callback<T>) => {
     if (!topics.current.has(topic)) {
       topics.current.set(topic, [])
     }
-    topics.current.get(topic)!.push(cb)
+    topics.current.get(topic)!.push(cb as Callback<unknown>)
   }
 
-  const unsubscribe = (topic: string, cb: Callback) => {
+  const unsubscribe = <T = unknown>(topic: string, cb: Callback<T>) => {
     const list = topics.current.get(topic)
     if (!list) return
-    const index = list.indexOf(cb)
+    const index = list.indexOf(cb as Callback<unknown>)
     if (index !== -1) list.splice(index, 1)
   }
 
-  const notify = (topic: string, value: any) => {
+  const notify = <T = unknown>(topic: string, value: T) => {
     const list = topics.current.get(topic)
     if (!list) return
     list.forEach(cb => cb(value))

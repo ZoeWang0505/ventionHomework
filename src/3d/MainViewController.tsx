@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import ThreeEngineController from './engine'
 import { RayCastService } from './raycaster'
 import { buildShape, type RenderInfo, type Shape } from './buildShape'
-import { disposeObject, findMeshByInfoId } from './objectUtil'
+import { disposeObject, findMeshByInfoId, indexSceneIntoOctree, addMeshToOctree, removeMeshFromOctree, updateMeshInOctree } from './objectUtil'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNotification } from '../notification'
 import { useShapeStore, type ShapeDoc } from '../data/shapeStore'
@@ -99,6 +99,8 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
           })
           // attach a reference to the persisted doc
           newMesh.userData.infoId = doc._id
+          // index new mesh in octree
+          addMeshToOctree(newMesh)
         })()
       }
     }, [view, selectedShape, shapeStore])
@@ -129,6 +131,8 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
         if (infoId) {
           shapeStore.removeShape(infoId).catch(() => null)
         }
+        // remove from octree first
+        removeMeshFromOctree(selectedShape)
         disposeObject(selectedShape)
         selectedShape.parent?.remove(selectedShape)
         setSelectedShape(null)
@@ -150,11 +154,13 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
         highlightObject(mesh, false)
         setSelectedShape(prev => (prev === mesh ? null : prev))
       }
+      // update octree index for this mesh (position may have changed)
+      updateMeshInOctree(mesh)
     }
 
     shapeStore.subscribe('shapeUpdated', handleUpdated)
     return () => shapeStore.unsubscribe('shapeUpdated', handleUpdated)
-  }, [shapeStore, findMeshByInfoId, highlightObject])
+  }, [shapeStore, highlightObject])
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -198,6 +204,11 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
       deleteSelectedShape,
     }
   }, [createShape, selectShape, deleteSelectedShape])
+
+  useEffect(() => {
+    // Build initial octree index of the scene
+    indexSceneIntoOctree()
+  }, [])
 
 
 

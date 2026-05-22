@@ -25,14 +25,20 @@ export type ShapeTreeNode = {
   children: ShapeTreeNode[]
 }
 
-export type ShapeStoreEvent = 'shapeAdded' | 'shapeRemoved' | 'shapeUpdated'
-export type ShapeListener = (doc: ShapeEvent) => void
+export type ShapeListenerMap = {
+  shapeAdded: (doc: ShapeDoc) => void
+  shapeRemoved: (doc: ShapeEvent) => void
+  shapeUpdated: (doc: ShapeDoc) => void
+}
+
+export type ShapeStoreEvent = keyof ShapeListenerMap
+export type ShapeListener<K extends ShapeStoreEvent = ShapeStoreEvent> = ShapeListenerMap[K]
 
 class ShapeStore {
   private db: PouchDB.Database<ShapeDoc>
   private feed?: PouchDB.Core.Changes<ShapeDoc>
   private knownIds = new Set<string>()
-  private listeners: Record<ShapeStoreEvent, Set<ShapeListener>> = {
+  private listeners: { [K in keyof ShapeListenerMap]: Set<ShapeListenerMap[K]> } = {
     shapeAdded: new Set(),
     shapeRemoved: new Set(),
     shapeUpdated: new Set(),
@@ -79,16 +85,19 @@ class ShapeStore {
     })
   }
 
-  subscribe(event: ShapeStoreEvent, cb: ShapeListener) {
+  subscribe<K extends ShapeStoreEvent>(event: K, cb: ShapeListenerMap[K]) {
     this.listeners[event].add(cb)
   }
 
-  unsubscribe(event: ShapeStoreEvent, cb: ShapeListener) {
+  unsubscribe<K extends ShapeStoreEvent>(event: K, cb: ShapeListenerMap[K]) {
     this.listeners[event].delete(cb)
   }
 
-  private emit(event: ShapeStoreEvent, doc: ShapeEvent) {
-    this.listeners[event].forEach(cb => cb(doc))
+  private emit<K extends ShapeStoreEvent>(event: K, doc: Parameters<ShapeListenerMap[K]>[0]) {
+    // iterate with a typed assertion to call the listener
+    for (const cb of Array.from(this.listeners[event])) {
+      ;(cb as unknown as (d: unknown) => void)(doc)
+    }
   }
 
   async addShape(doc: Omit<ShapeDoc, '_id' | '_rev'>) {

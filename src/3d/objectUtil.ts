@@ -1,5 +1,50 @@
 import { Mesh, type Object3D } from "three";
 import ThreeEngineController from "./engine";
+import { Octree as ThreeExampleOctree } from 'three/examples/jsm/math/Octree.js'
+
+// Use the three.js example Octree when available; keep an id->mesh map for O(1) lookup.
+const sceneOctree: any = new (ThreeExampleOctree as any)()
+const idMap = new Map<string, Mesh>()
+
+export function indexSceneIntoOctree() {
+  const meshes: Mesh[] = []
+  ThreeEngineController.getInstance()
+    .getObjectsInScene()
+    .forEach(root => {
+      root.traverse(node => {
+        if (node instanceof Mesh) meshes.push(node)
+      })
+    })
+
+  idMap.clear()
+  // reset octree if it exposes a `clear` or `set` method, otherwise recreate
+  if (typeof sceneOctree.clear === 'function') sceneOctree.clear()
+  else if (typeof sceneOctree.dispose === 'function') sceneOctree.dispose()
+
+  for (const m of meshes) {
+    const id = m.userData?.infoId
+    if (typeof id === 'string') idMap.set(id, m)
+    if (typeof sceneOctree.add === 'function') sceneOctree.add(m)
+  }
+}
+
+export function addMeshToOctree(mesh: Mesh) {
+  const id = mesh.userData?.infoId
+  if (typeof id === 'string') idMap.set(id, mesh)
+  if (typeof sceneOctree.add === 'function') sceneOctree.add(mesh)
+}
+
+export function removeMeshFromOctree(mesh: Mesh) {
+  const id = mesh.userData?.infoId
+  if (typeof id === 'string') idMap.delete(id)
+  if (typeof sceneOctree.remove === 'function') sceneOctree.remove(mesh)
+}
+
+export function updateMeshInOctree(mesh: Mesh) {
+  const id = mesh.userData?.infoId
+  if (typeof id === 'string') idMap.set(id, mesh)
+  if (typeof sceneOctree.update === 'function') sceneOctree.update(mesh)
+}
 
 /**
  * AI generated function, to disposeObject after delete
@@ -54,15 +99,6 @@ export const toHtmlColor = (hex): string => {
 }
 
 export function findMeshByInfoId(id: string): Mesh | null {
-  let found: Mesh | null = null
-  ThreeEngineController.getInstance()
-    .getObjectsInScene()
-    .forEach(root => {
-      root.traverse(node => {
-        if (!found && node instanceof Mesh && node.userData?.infoId === id) {
-          found = node
-        }
-      })
-    })
-  return found
+  // Rely on the id->mesh map for O(1) lookup. Keep indexes correct elsewhere.
+  return idMap.get(id) ?? null
 }

@@ -22,15 +22,40 @@ export const ShapeList: React.FC = () => {
   const [tree, setTree] = useState<ShapeTreeNode[]>([])
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
 
   const refreshTree = useCallback(() => {
-    Promise.all([shapeStore.buildTree(), shapeStore.getAllShapes()])
-      .then(([treeDocs, allDocs]) => {
-        setTree(treeDocs)
-        setTotal(allDocs.length)
+    shapeStore.getShapesPage({ page, pageSize: PAGE_SIZE })
+      .then(({ docs, total: t, totalPages: tp }) => {
+        const map = new Map<string, ShapeTreeNode>()
+        for (const d of docs) {
+          if (!d._id) continue
+          map.set(d._id, {
+            id: d._id,
+            meshType: d.meshType,
+            color: d.color,
+            position: d.position,
+            isSelected: d.isSelected,
+            children: [],
+          })
+        }
+        const roots: ShapeTreeNode[] = []
+        for (const d of docs) {
+          if (!d._id) continue
+          const node = map.get(d._id)!
+          const parentId = d.parentId ?? null
+          if (parentId && map.has(parentId)) {
+            map.get(parentId)!.children.push(node)
+          } else {
+            roots.push(node)
+          }
+        }
+        setTree(roots)
+        setTotal(t)
+        setTotalPages(Math.max(1, tp))
       })
       .catch(() => null)
-  }, [shapeStore])
+  }, [shapeStore, page])
 
   useEffect(() => {
     const handleProjectName = (newName: string) => setProjectName(newName)
@@ -61,12 +86,10 @@ export const ShapeList: React.FC = () => {
     return flatten(tree)
   }, [tree])
 
-  const totalPages = Math.max(1, Math.ceil(flattenedTree.length / PAGE_SIZE))
   useEffect(() => {
     if (page > totalPages) setPage(totalPages)
   }, [page, totalPages])
 
-  const displayedTree = flattenedTree.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const hasPrev = page > 1
   const hasNext = page < totalPages
 
@@ -81,7 +104,7 @@ export const ShapeList: React.FC = () => {
       </div>
 
       <div className={styles.treeContainer}>
-        {displayedTree.map(node => (
+        {flattenedTree.map(node => (
           <ShapeRow
             key={node.id}
             nodeId={node.id}

@@ -1,10 +1,11 @@
 import * as THREE from 'three'
 import ThreeEngineController from './engine'
 import { RayCastService } from './raycaster'
-import { buildShape, type Info, type Shape } from './buildShape'
-import { disposeObject } from './objectUtil'
+import { buildShape, type RenderInfo, type Shape } from './buildShape'
+import { disposeObject, findMeshByInfoId } from './objectUtil'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNotification } from '../notification'
+import { useShapeStore, type ShapeDoc } from '../data/shapeStore'
 
 declare global {
   interface Window {
@@ -28,6 +29,7 @@ const ControllerContext = createContext<ControllerContextValue | null>(null)
 
 export function ControllerProvider({ children }: { children: React.ReactNode }) {
   const {notify, subscribe, unsubscribe} = useNotification();
+  const shapeStore = useShapeStore()
   const [view] = useState(ThreeEngineController.getInstance())
   const [raycaster] = useState(new RayCastService())
 
@@ -51,15 +53,13 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
   const highlightObject = useCallback((obj: THREE.Object3D, highlight: boolean) => {
     obj.traverse((node) => {
       if (node instanceof THREE.Mesh) {
-        const info = node.userData as Info
+        const info = node.userData as RenderInfo
         info.isSelected = highlight
 
         if (highlight) {
-          node.material.color.set(highlightedColor);
+          node.material.color.set(highlightedColor)
         } else {
-          if (info.color) {
-            node.material.color.set(info.color);
-          }
+          node.material.color.set(info.renderColor)
         }
       }
     });
@@ -77,9 +77,31 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
         } else {
           view.addToScene(newMesh)
         }
-        notify('shapeAdded', view.getObjectsInScene())
+
+        const material = newMesh.material as THREE.MeshBasicMaterial
+        const parentId =
+          selectedShape && typeof selectedShape.userData?.infoId === 'string'
+            ? selectedShape.userData.infoId
+            : null
+
+        ;(async () => {
+          const doc = await shapeStore.addShape({
+            type: 'shape',
+            meshType: shape,
+            color: material.color.getHex(),
+            position: {
+              x: newMesh.position.x,
+              y: newMesh.position.y,
+              z: newMesh.position.z,
+            },
+            isSelected: false,
+            parentId,
+          })
+          // attach a reference to the persisted doc
+          newMesh.userData.infoId = doc._id
+        })()
       }
-    }, [notify, view, selectedShape])
+    }, [view, selectedShape, shapeStore])
 
    const selectShape = useCallback((point: [number, number]) => {
       raycaster.update(point, view.getCamera())
@@ -99,13 +121,40 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
 
   const deleteSelectedShape = useCallback(() => {
       if (selectedShape) {
+        // remove persisted UI doc if present
+        const infoId =
+          typeof selectedShape.userData?.infoId === 'string'
+            ? selectedShape.userData.infoId
+            : undefined
+        if (infoId) {
+          shapeStore.removeShape(infoId).catch(() => null)
+        }
         disposeObject(selectedShape)
         selectedShape.parent?.remove(selectedShape)
         setSelectedShape(null)
-        notify('shapeRemoved', view.getObjectsInScene())
-        notify('shapeSelected', null)
       }
-    }, [selectedShape, notify, view])
+    }, [selectedShape, view, shapeStore])
+
+  // React to selection state changes from the store (the single source of truth
+  // for which doc is selected). The store fires `shapeUpdated` whenever a doc's
+  // `isSelected` toggles; we mirror that into mesh highlight + local mesh ref.
+  useEffect(() => {
+    const handleUpdated = (doc: ShapeDoc) => {
+      if (!doc._id) return
+      const mesh = findMeshByInfoId(doc._id)
+      if (!mesh) return
+      if (doc.isSelected) {
+        highlightObject(mesh, true)
+        setSelectedShape(mesh)
+      } else {
+        highlightObject(mesh, false)
+        setSelectedShape(prev => (prev === mesh ? null : prev))
+      }
+    }
+
+    shapeStore.subscribe('shapeUpdated', handleUpdated)
+    return () => shapeStore.unsubscribe('shapeUpdated', handleUpdated)
+  }, [shapeStore, findMeshByInfoId, highlightObject])
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -118,33 +167,28 @@ export function ControllerProvider({ children }: { children: React.ReactNode }) 
     return () => window.removeEventListener('keydown', handleKey)
   }, [deleteSelectedShape])
 
+  // UI click bus → DB write. The store's `shapeUpdated` event then drives
+  // highlight + local mesh ref via the effect above. Unidirectional flow:
+  // user intent (NotificationProvider) → mutate store → state event → render.
   useEffect(() => {
     const handleShapeSelected = (mesh: THREE.Mesh | null) => {
-      const objects = view.getObjectsInScene()
-      // Unhighlight all objects with a single traversal
-      objects.forEach(obj => {
-        if (obj instanceof THREE.Mesh) {
-          highlightObject(obj, false)
-        }
-      })
-
       if (mesh === null) {
-        setSelectedShape(null)
+        void shapeStore.selectShape(null)
         return
       }
-      
-      mesh.userData.isSelected = true
-      highlightObject(mesh, true)
-      setSelectedShape(mesh)
+      const infoId =
+        typeof mesh.userData?.infoId === 'string'
+          ? mesh.userData.infoId
+          : undefined
+      // A freshly created mesh may not yet have an infoId (persisted async);
+      // such a click can't be routed through the store, so it's dropped.
+      if (!infoId) return
+      void shapeStore.selectShape(infoId)
     }
 
     subscribe<THREE.Mesh | null>('shapeSelected', handleShapeSelected)
-    
-    return () => {
-      // Cleanup: unsubscribe when component unmounts
-      unsubscribe('shapeSelected', handleShapeSelected)
-    }
-  }, [view, subscribe, unsubscribe, highlightObject])
+    return () => unsubscribe('shapeSelected', handleShapeSelected)
+  }, [subscribe, unsubscribe, shapeStore])
 
   useEffect(() => {
     // Expose API to window so jQuery code can call it

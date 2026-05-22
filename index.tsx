@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import { ControllerProvider } from './src/3d/MainViewController'
 import { NotificationProvider } from './src/notification'
+import { ShapeStoreProvider } from './src/data/shapeStore'
 import { AppLayout } from './src/layout'
 
 function initializeApp() {
@@ -8,9 +9,11 @@ function initializeApp() {
   if (reactCanvasRoot) {
     createRoot(reactCanvasRoot).render(
       <NotificationProvider>
-        <ControllerProvider>
-          <AppLayout />
-        </ControllerProvider>
+        <ShapeStoreProvider>
+          <ControllerProvider>
+            <AppLayout />
+          </ControllerProvider>
+        </ShapeStoreProvider>
       </NotificationProvider>
     )
   }

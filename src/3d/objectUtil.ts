@@ -1,4 +1,5 @@
 import { Mesh, type Object3D } from "three";
+import ThreeEngineController from "./engine";
 
 /**
  * AI generated function, to disposeObject after delete
@@ -50,4 +51,18 @@ export const toHtmlColor = (hex): string => {
   }
 
   return `#${cleaned.toLowerCase()}`;
+}
+
+export function findMeshByInfoId(id: string): Mesh | null {
+  let found: Mesh | null = null
+  ThreeEngineController.getInstance()
+    .getObjectsInScene()
+    .forEach(root => {
+      root.traverse(node => {
+        if (!found && node instanceof Mesh && node.userData?.infoId === id) {
+          found = node
+        }
+      })
+    })
+  return found
 }
